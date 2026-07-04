@@ -5,7 +5,7 @@ import {
   Activity, LayoutDashboard, Calendar, BedDouble, Stethoscope, Video,
   FileText, Users, Settings, Bell, Search, Menu, X, Moon, Sun,
   LogOut, ChevronDown, Bot, Building2, BarChart3, MessageCircle, FlaskConical,
-  Receipt, ClipboardList, HeartPulse
+  Receipt, ClipboardList, HeartPulse, CalendarRange
 } from 'lucide-react';
 import { useAuthStore } from '../../store/auth';
 import { useUIStore } from '../../store/ui';
@@ -25,6 +25,7 @@ const navByRole: Record<string, NavItem[]> = {
     { to: '/admin/appointments', label: 'Appointments', icon: Calendar },
     { to: '/admin/beds', label: 'Bed Management', icon: BedDouble },
     { to: '/admin/operation-theatres', label: 'Operation Theatres', icon: Stethoscope },
+    { to: '/admin/staff-scheduling', label: 'Staff Scheduling', icon: CalendarRange },
     { to: '/admin/doctors', label: 'Doctors', icon: Users },
     { to: '/admin/patients', label: 'Patients', icon: HeartPulse },
     { to: '/admin/departments', label: 'Departments', icon: Building2 },

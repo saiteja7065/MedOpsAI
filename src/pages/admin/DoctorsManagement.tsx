@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Stethoscope, Search, Star, Plus, Mail, Phone, Eye, CheckCircle, XCircle } from 'lucide-react';
 import { doctorsApi, departmentsApi } from '../../lib/api';
 import { Card, Skeleton, EmptyState, Modal, Button, Avatar, Badge } from '../../components/ui';
-import { cn } from '../../lib/utils';
+import { cn, formatCurrency } from '../../lib/utils';
 
 export function DoctorsManagement() {
   const navigate = useNavigate();
@@ -107,7 +107,7 @@ export function DoctorsManagement() {
             <div className="grid grid-cols-2 gap-4">
               <div><p className="text-sm text-slate-500">Employee ID</p><p className="font-medium">{selected.employee_id}</p></div>
               <div><p className="text-sm text-slate-500">Experience</p><p className="font-medium">{selected.experience_years} years</p></div>
-              <div><p className="text-sm text-slate-500">Consultation Fee</p><p className="font-medium">${selected.consultation_fee}</p></div>
+              <div><p className="text-sm text-slate-500">Consultation Fee</p><p className="font-medium">{formatCurrency(selected.consultation_fee)}</p></div>
               <div><p className="text-sm text-slate-500">Department</p><p className="font-medium">{selected.department?.name || 'N/A'}</p></div>
               <div><p className="text-sm text-slate-500">Email</p><p className="font-medium">{selected.profile?.email}</p></div>
               <div><p className="text-sm text-slate-500">Phone</p><p className="font-medium">{selected.profile?.phone || 'N/A'}</p></div>

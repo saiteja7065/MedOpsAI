@@ -1,12 +1,16 @@
-import { useQuery } from '@tanstack/react-query';
-import { TrendingUp, DollarSign, Users, Activity, BedDouble, Stethoscope, Video, AlertTriangle } from 'lucide-react';
-import { analyticsApi, appointmentsApi, bedsApi, otsApi, doctorsApi, patientsApi } from '../../lib/api';
-import { Card, CardHeader, Skeleton, StatCard } from '../../components/ui';
-import { formatCurrency, formatNumber } from '../../lib/utils';
+import { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { TrendingUp, TrendingDown, Minus, DollarSign, Users, Activity, BedDouble, Stethoscope, Video, AlertTriangle, Sparkles } from 'lucide-react';
+import { analyticsApi, appointmentsApi, bedsApi, otsApi, doctorsApi, patientsApi, forecastApi } from '../../lib/api';
+import { Card, CardHeader, Skeleton, StatCard, Button } from '../../components/ui';
+import { formatCurrency, formatNumber, formatDate } from '../../lib/utils';
+import { groupByWeek, forecastWeeklyVolume } from '../../lib/forecast';
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadialBarChart, RadialBar
 } from 'recharts';
+
+const WEEKS_AHEAD = 4;
 
 export function AnalyticsPage() {
   const { data: stats, isLoading } = useQuery({ queryKey: ['admin-stats'], queryFn: analyticsApi.getDashboardStats });
@@ -14,6 +18,7 @@ export function AnalyticsPage() {
   const { data: beds = [] } = useQuery({ queryKey: ['beds'], queryFn: bedsApi.getAll });
   const { data: ots = [] } = useQuery({ queryKey: ['ots'], queryFn: otsApi.getAll });
   const { data: doctors = [] } = useQuery({ queryKey: ['doctors'], queryFn: () => doctorsApi.getAll() });
+  const [insight, setInsight] = useState<string | null>(null);
 
   // Monthly data (last 6 months)
   const monthlyData = Array.from({ length: 6 }, (_, i) => {
@@ -43,8 +48,8 @@ export function AnalyticsPage() {
   ].filter(d => d.value > 0);
 
   // Bed occupancy radial
-  const bedOccupancy = stats ? Math.round((stats.bedsOccupied / stats.totalBeds) * 100) : 0;
-  const otUtilization = stats ? Math.round((stats.otsOccupied / stats.totalOTs) * 100) : 0;
+  const bedOccupancy = stats && stats.totalBeds > 0 ? Math.round((stats.bedsOccupied / stats.totalBeds) * 100) : 0;
+  const otUtilization = stats && stats.totalOTs > 0 ? Math.round((stats.otsOccupied / stats.totalOTs) * 100) : 0;
 
   // Doctor performance
   const doctorPerf = doctors.slice(0, 5).map(d => ({
@@ -52,6 +57,37 @@ export function AnalyticsPage() {
     consultations: d.total_consultations,
     rating: d.rating,
   }));
+
+  // Demand forecast — a real linear-trend fit over historical weekly appointment
+  // volume, not an LLM guess. See lib/forecast.ts for the "rules decide" half
+  // of the split; the AI Insight button below is the "AI narrates" half.
+  const todayStr = new Date().toISOString().split('T')[0];
+  const historicalDates = appointments.filter(a => a.appointment_date <= todayStr).map(a => a.appointment_date);
+  const weeklyHistory = groupByWeek(historicalDates);
+  const forecast = forecastWeeklyVolume(weeklyHistory, WEEKS_AHEAD);
+  const lastHistoricalIdx = forecast.points.findIndex(p => p.isForecast) - 1;
+  const forecastChartData = forecast.points.map((p, i) => ({
+    label: formatDate(p.weekStart, 'short').split(',')[0],
+    historical: p.isForecast ? null : p.value,
+    forecast: (p.isForecast || i === lastHistoricalIdx) ? p.value : null,
+  }));
+  const lastHistoricalCount = weeklyHistory[weeklyHistory.length - 1]?.count;
+  const lastForecastCount = forecast.points[forecast.points.length - 1]?.value;
+  const projectedBedDemand = Math.min(100, Math.round(bedOccupancy * (1 + forecast.weeklyGrowthRate * WEEKS_AHEAD)));
+
+  const insightMutation = useMutation({
+    mutationFn: () => forecastApi.narrate({
+      weeklyGrowthRate: forecast.weeklyGrowthRate,
+      projectedGrowthPct: forecast.projectedGrowthPct,
+      trend: forecast.trend,
+      weeksAhead: WEEKS_AHEAD,
+      lastHistoricalCount,
+      lastForecastCount,
+    }),
+    onSuccess: (text) => setInsight(text),
+  });
+
+  const TrendIcon = forecast.trend === 'rising' ? TrendingUp : forecast.trend === 'falling' ? TrendingDown : Minus;
 
   if (isLoading) {
     return <div className="space-y-6">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-64" />)}</div>;
@@ -71,6 +107,54 @@ export function AnalyticsPage() {
         <StatCard label="Bed Occupancy" value={`${bedOccupancy}%`} icon={<BedDouble className="w-5 h-5" />} color="amber" />
         <StatCard label="OT Utilization" value={`${otUtilization}%`} icon={<Stethoscope className="w-5 h-5" />} color="rose" />
       </div>
+
+      {/* Demand Forecast */}
+      <Card>
+        <CardHeader
+          title="Demand Forecast"
+          subtitle={`Weekly appointment volume — ${weeklyHistory.length} weeks of history, ${WEEKS_AHEAD}-week projection`}
+          icon={<TrendIcon className="w-5 h-5" />}
+        />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart data={forecastChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:opacity-20" />
+                <XAxis dataKey="label" stroke="#94a3b8" fontSize={11} />
+                <YAxis stroke="#94a3b8" fontSize={12} allowDecimals={false} />
+                <Tooltip contentStyle={{ background: 'rgba(15,23,42,0.9)', border: 'none', borderRadius: '12px', color: '#fff' }} />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Line type="monotone" dataKey="historical" name="Historical" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} connectNulls={false} />
+                <Line type="monotone" dataKey="forecast" name="Forecast" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="6 4" dot={{ r: 3 }} connectNulls={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="space-y-3">
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+              <p className="text-xs text-slate-500 mb-1">Trend</p>
+              <p className="font-semibold capitalize flex items-center gap-1.5">
+                <TrendIcon className="w-4 h-4" /> {forecast.trend} · {forecast.projectedGrowthPct >= 0 ? '+' : ''}{forecast.projectedGrowthPct.toFixed(0)}% in {WEEKS_AHEAD}wk
+              </p>
+            </div>
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+              <p className="text-xs text-slate-500 mb-1">Projected bed demand</p>
+              <p className="font-semibold">{projectedBedDemand}% occupancy</p>
+              <p className="text-xs text-slate-400 mt-0.5">Derived from the appointment-volume trend — beds have no independent history to model on their own.</p>
+            </div>
+            <Button size="sm" variant="secondary" className="w-full" icon={<Sparkles className="w-3.5 h-3.5" />} loading={insightMutation.isPending} onClick={() => insightMutation.mutate()}>
+              Get AI Insight
+            </Button>
+            {insight && (
+              <div className="p-3 rounded-xl bg-primary-50 dark:bg-primary-900/20 text-sm text-slate-700 dark:text-slate-300">
+                {insight}
+              </div>
+            )}
+            {insightMutation.isError && (
+              <p className="text-xs text-rose-600">{(insightMutation.error as Error).message}</p>
+            )}
+          </div>
+        </div>
+      </Card>
 
       {/* Revenue & Appointments Trend */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -141,29 +225,33 @@ export function AnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader title="Bed Occupancy" subtitle={`${bedOccupancy}% occupied`} icon={<BedDouble className="w-5 h-5" />} />
-          <ResponsiveContainer width="100%" height={250}>
-            <RadialBarChart innerRadius="50%" outerRadius="90%" data={[{ name: 'Occupancy', value: bedOccupancy, fill: '#f59e0b' }]} startAngle={90} endAngle={-270}>
-              <RadialBar background dataKey="value" cornerRadius={10} />
-              <Tooltip contentStyle={{ background: 'rgba(15,23,42,0.9)', border: 'none', borderRadius: '12px', color: '#fff' }} />
-            </RadialBarChart>
-          </ResponsiveContainer>
-          <div className="text-center -mt-16 mb-4">
-            <p className="text-3xl font-bold">{bedOccupancy}%</p>
-            <p className="text-sm text-slate-500">Occupied</p>
+          <div className="relative" style={{ height: 250 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <RadialBarChart innerRadius="50%" outerRadius="90%" data={[{ name: 'Occupancy', value: bedOccupancy, fill: '#f59e0b' }]} startAngle={90} endAngle={-270}>
+                <RadialBar background dataKey="value" cornerRadius={10} />
+                <Tooltip contentStyle={{ background: 'rgba(15,23,42,0.9)', border: 'none', borderRadius: '12px', color: '#fff' }} />
+              </RadialBarChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <p className="text-3xl font-bold">{bedOccupancy}%</p>
+              <p className="text-sm text-slate-500">Occupied</p>
+            </div>
           </div>
         </Card>
 
         <Card>
           <CardHeader title="OT Utilization" subtitle={`${otUtilization}% in use`} icon={<Stethoscope className="w-5 h-5" />} />
-          <ResponsiveContainer width="100%" height={250}>
-            <RadialBarChart innerRadius="50%" outerRadius="90%" data={[{ name: 'Utilization', value: otUtilization, fill: '#f43f5e' }]} startAngle={90} endAngle={-270}>
-              <RadialBar background dataKey="value" cornerRadius={10} />
-              <Tooltip contentStyle={{ background: 'rgba(15,23,42,0.9)', border: 'none', borderRadius: '12px', color: '#fff' }} />
-            </RadialBarChart>
-          </ResponsiveContainer>
-          <div className="text-center -mt-16 mb-4">
-            <p className="text-3xl font-bold">{otUtilization}%</p>
-            <p className="text-sm text-slate-500">In Use</p>
+          <div className="relative" style={{ height: 250 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <RadialBarChart innerRadius="50%" outerRadius="90%" data={[{ name: 'Utilization', value: otUtilization, fill: '#f43f5e' }]} startAngle={90} endAngle={-270}>
+                <RadialBar background dataKey="value" cornerRadius={10} />
+                <Tooltip contentStyle={{ background: 'rgba(15,23,42,0.9)', border: 'none', borderRadius: '12px', color: '#fff' }} />
+              </RadialBarChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <p className="text-3xl font-bold">{otUtilization}%</p>
+              <p className="text-sm text-slate-500">In Use</p>
+            </div>
           </div>
         </Card>
       </div>

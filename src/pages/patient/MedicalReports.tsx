@@ -1,17 +1,25 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FileText, Upload, Search, Download, Sparkles, Eye, Trash2, FileImage, FileCheck } from 'lucide-react';
+import { FileText, Upload, Search, Download, Sparkles, Eye, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { medicalReportsApi, patientsApi } from '../../lib/api';
 import { useAuthStore } from '../../store/auth';
-import { Card, CardHeader, Skeleton, EmptyState, Modal, Button, Badge } from '../../components/ui';
-import { formatDate, timeAgo } from '../../lib/utils';
+import { Card, Skeleton, EmptyState, Modal, Button, Badge } from '../../components/ui';
+import { formatDate } from '../../lib/utils';
+
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
+
+function isImageFile(fileName: string) {
+  const ext = fileName.split('.').pop()?.toLowerCase() || '';
+  return IMAGE_EXTENSIONS.includes(ext);
+}
 
 export function MedicalReports() {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<any>(null);
-  const [showUpload, setShowUpload] = useState(false);
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+  const [analysisError, setAnalysisError] = useState<{ id: string; message: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const { data: patient } = useQuery({
@@ -26,36 +34,43 @@ export function MedicalReports() {
     enabled: !!patient,
   });
 
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['patient-reports'] });
+
+  const analyzeMutation = useMutation({
+    mutationFn: (reportId: string) => medicalReportsApi.analyze(reportId),
+    onMutate: (reportId) => { setAnalyzingId(reportId); setAnalysisError(null); },
+    onSuccess: invalidate,
+    onError: (err: Error, reportId) => setAnalysisError({ id: reportId, message: err.message }),
+    onSettled: () => setAnalyzingId(null),
+  });
+
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
       const fileUrl = await medicalReportsApi.uploadFile(file, patient!.id);
-      // Simulate AI OCR processing
-      const aiSummary = `This medical report appears to be a ${file.name.includes('lab') ? 'laboratory test' : 'medical'} document. AI has extracted key information including patient vitals, test results, and diagnostic indicators. The report shows normal ranges for most parameters with some areas requiring follow-up consultation.`;
-      const aiDiseases = ['Hypertension (monitoring)', 'Vitamin D deficiency'];
-      const aiMedicines = ['Vitamin D3 1000IU', 'Multivitamin daily'];
-      return medicalReportsApi.create({
+      const report = await medicalReportsApi.create({
         patient_id: patient!.id,
         report_type: file.name.match(/lab|test|blood/i) ? 'lab' : 'other',
         title: file.name.replace(/\.[^/.]+$/, ''),
         file_url: fileUrl,
         file_name: file.name,
         file_size: file.size,
-        ai_summary: aiSummary,
-        ai_diseases: aiDiseases,
-        ai_medicines: aiMedicines,
-        ai_test_results: { hemoglobin: '13.5 g/dL', whiteBloodCells: '7.2 K/µL', platelets: '250 K/µL' },
-        is_processed: true,
+        is_processed: false,
       });
+      return { report, file };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['patient-reports'] });
-      setShowUpload(false);
+    onSuccess: ({ report, file }) => {
+      invalidate();
+      // Auto-run real AI analysis for image uploads — the edge function
+      // rejects non-image files, so we only attempt it when it can succeed.
+      if (isImageFile(file.name)) {
+        analyzeMutation.mutate(report.id);
+      }
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: medicalReportsApi.remove,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['patient-reports'] }),
+    onSuccess: invalidate,
   });
 
   const filtered = reports.filter(r => r.title.toLowerCase().includes(search.toLowerCase()));
@@ -69,13 +84,13 @@ export function MedicalReports() {
           <h1 className="text-2xl font-bold">Medical Reports</h1>
           <p className="text-slate-500">Upload and manage your medical documents</p>
         </div>
-        <Button icon={<Upload className="w-4 h-4" />} onClick={() => fileRef.current?.click()}>Upload Report</Button>
+        <Button icon={<Upload className="w-4 h-4" />} loading={uploadMutation.isPending} onClick={() => fileRef.current?.click()}>Upload Report</Button>
         <input
           ref={fileRef}
           type="file"
           accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
           className="hidden"
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadMutation.mutate(f); }}
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadMutation.mutate(f); e.target.value = ''; }}
         />
       </div>
 
@@ -88,7 +103,7 @@ export function MedicalReports() {
         <EmptyState
           icon={<FileText className="w-8 h-8" />}
           title="No medical reports"
-          description="Upload your medical reports for AI-powered analysis"
+          description="Upload a report image (JPG/PNG) for real AI-powered analysis"
           action={<Button icon={<Upload className="w-4 h-4" />} onClick={() => fileRef.current?.click()}>Upload Report</Button>}
         />
       ) : (
@@ -99,12 +114,23 @@ export function MedicalReports() {
                 <div className="p-3 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-600">
                   <FileText className="w-5 h-5" />
                 </div>
-                {report.is_processed && <Badge variant="success" icon={<Sparkles className="w-3 h-3" />}>AI Processed</Badge>}
+                {analyzingId === report.id ? (
+                  <Badge variant="info" icon={<Loader2 className="w-3 h-3 animate-spin" />}>Analyzing…</Badge>
+                ) : report.is_processed ? (
+                  <Badge variant="success" icon={<Sparkles className="w-3 h-3" />}>AI Processed</Badge>
+                ) : isImageFile(report.file_name || '') ? (
+                  <Button variant="ghost" size="sm" icon={<Sparkles className="w-3.5 h-3.5" />} onClick={() => analyzeMutation.mutate(report.id)}>Analyze</Button>
+                ) : (
+                  <Badge variant="neutral">No AI (file type)</Badge>
+                )}
               </div>
               <h3 className="font-medium truncate">{report.title}</h3>
               <p className="text-xs text-slate-500 mt-1">{formatDate(report.created_at, 'long')}</p>
               {report.ai_summary && (
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-2 line-clamp-2">{report.ai_summary}</p>
+              )}
+              {analysisError?.id === report.id && (
+                <p className="text-xs text-rose-600 mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3 flex-shrink-0" /> {analysisError.message}</p>
               )}
               <div className="flex gap-2 mt-4">
                 <Button variant="secondary" size="sm" className="flex-1" icon={<Eye className="w-3.5 h-3.5" />} onClick={() => setSelected(report)}>View</Button>
@@ -162,7 +188,7 @@ export function MedicalReports() {
               </div>
             )}
 
-            {selected.ai_test_results && (
+            {selected.ai_test_results && Object.keys(selected.ai_test_results).length > 0 && (
               <div>
                 <p className="text-sm font-medium mb-2">Test Results</p>
                 <div className="grid grid-cols-2 gap-3">
@@ -174,6 +200,12 @@ export function MedicalReports() {
                   ))}
                 </div>
               </div>
+            )}
+
+            {!selected.is_processed && isImageFile(selected.file_name || '') && (
+              <Button className="w-full" icon={<Sparkles className="w-4 h-4" />} loading={analyzingId === selected.id} onClick={() => analyzeMutation.mutate(selected.id)}>
+                Analyze with AI
+              </Button>
             )}
 
             {selected.file_url && (

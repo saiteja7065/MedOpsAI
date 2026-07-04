@@ -230,7 +230,7 @@ function CodingWorkspace({ appointment, doctorId, userId, onClose }: { appointme
           ) : (
             <div className="flex items-center gap-3">
               <div className="flex-1">
-                <label className="block text-xs text-slate-500 mb-1">Billed amount</label>
+                <label className="block text-xs text-slate-500 mb-1">Billed amount (₹)</label>
                 <input className="input" type="number" value={billedAmount} onChange={e => setBilledAmount(e.target.value)} />
               </div>
               <Button loading={createClaimMutation.isPending} onClick={() => createClaimMutation.mutate()}>Create Claim</Button>

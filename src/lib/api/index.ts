@@ -16,3 +16,5 @@ export { healthProblemsApi } from './healthProblems';
 export { slotsApi } from './slots';
 export { codingApi } from './coding';
 export { claimsApi } from './claims';
+export { forecastApi } from './forecast';
+export { staffShiftsApi } from './staffShifts';

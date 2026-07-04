@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Calendar, Search, Eye, CheckCircle, XCircle, Clock, Video, Filter, CalendarClock, AlertCircle } from 'lucide-react';
 import { appointmentsApi, slotsApi } from '../../lib/api';
 import { Card, Skeleton, EmptyState, Modal, Button, StatusBadge, Avatar } from '../../components/ui';
-import { formatDate, cn } from '../../lib/utils';
+import { formatDate, formatCurrency, cn } from '../../lib/utils';
 import type { Appointment, AppointmentStatus } from '../../types';
 
 interface AppointmentsPageProps {
@@ -204,7 +204,7 @@ export function AppointmentsPage({ role, entityId }: AppointmentsPageProps) {
               <div><p className="text-sm text-slate-500">Date & Time</p><p className="font-medium">{formatDate(selected.appointment_date, 'long')} at {selected.appointment_time}</p></div>
               <div><p className="text-sm text-slate-500">Type</p><p className="font-medium capitalize">{selected.type.replace('_', ' ')}</p></div>
               <div><p className="text-sm text-slate-500">Priority</p><p className="font-medium capitalize">{selected.priority}</p></div>
-              <div><p className="text-sm text-slate-500">Fee</p><p className="font-medium">${selected.fee}</p></div>
+              <div><p className="text-sm text-slate-500">Fee</p><p className="font-medium">{formatCurrency(selected.fee)}</p></div>
             </div>
             <div>
               <p className="text-sm text-slate-500">Reason</p>

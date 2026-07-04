@@ -6,3 +6,4 @@ export * from './clinical';
 export * from './communication';
 export * from './analytics';
 export * from './coding-claims';
+export * from './scheduling';

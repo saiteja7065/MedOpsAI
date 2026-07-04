@@ -37,4 +37,14 @@ export const medicalReportsApi = {
     const { data: urlData } = supabase.storage.from('medical-reports').getPublicUrl(path);
     return urlData.publicUrl;
   },
+
+  /** Real Groq vision-model analysis of the uploaded file — not simulated. */
+  async analyze(reportId: string): Promise<MedicalReport> {
+    const { data, error } = await supabase.functions.invoke('analyze-report', {
+      body: { report_id: reportId },
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return data.report as MedicalReport;
+  },
 };

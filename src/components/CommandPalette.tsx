@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ArrowRight, Calendar, BedDouble, Users, FileText, Video, Bot, BarChart3, Building2, Receipt, ClipboardList } from 'lucide-react';
+import { Search, ArrowRight, Calendar, BedDouble, Users, FileText, Video, Bot, BarChart3, Building2, Receipt, ClipboardList, CalendarRange } from 'lucide-react';
 import { useUIStore } from '../store/ui';
 import { useAuthStore } from '../store/auth';
 import { cn } from '../lib/utils';
@@ -46,6 +46,7 @@ export function CommandPalette() {
     { label: 'Departments', icon: Building2, action: () => navigate('/admin/departments'), category: 'Admin' },
     { label: 'Claims', icon: Receipt, action: () => navigate('/admin/claims'), category: 'Admin' },
     { label: 'Medical Coding', icon: ClipboardList, action: () => navigate('/doctor/coding'), category: 'Doctor' },
+    { label: 'Staff Scheduling', icon: CalendarRange, action: () => navigate('/admin/staff-scheduling'), category: 'Admin' },
   ];
 
   const filtered = commands.filter(c =>

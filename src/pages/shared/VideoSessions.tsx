@@ -1,16 +1,27 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Video, VideoOff, Mic, MicOff, Phone, MessageSquare, ScreenShare, FileText, X, Send, Users, Sparkles } from 'lucide-react';
+import { Video, VideoOff, Mic, MicOff, Phone, MessageSquare, ScreenShare, FileText, X, Send, Users, Sparkles, History, Clock } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { videoSessionsApi, appointmentsApi } from '../../lib/api';
-import { Card, Button, Avatar, Skeleton, EmptyState } from '../../components/ui';
-import { cn, formatDate } from '../../lib/utils';
+import { videoSessionsApi, appointmentsApi, doctorsApi, patientsApi } from '../../lib/api';
+import { Card, CardHeader, Button, Avatar, Skeleton, EmptyState, Badge, Modal } from '../../components/ui';
+import { cn, formatDate, timeAgo } from '../../lib/utils';
 import { useAuthStore } from '../../store/auth';
 
 export function VideoSessionsPage({ role }: { role: 'admin' | 'doctor' | 'patient' }) {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const [activeSession, setActiveSession] = useState<string | null>(null);
+  const [selectedPast, setSelectedPast] = useState<any>(null);
+
+  const { data: doctor } = useQuery({
+    queryKey: ['doctor-profile', user?.id],
+    queryFn: () => doctorsApi.getByProfileId(user!.id),
+    enabled: !!user && role === 'doctor',
+  });
+  const { data: patient } = useQuery({
+    queryKey: ['patient-profile', user?.id],
+    queryFn: () => patientsApi.getByProfileId(user!.id),
+    enabled: !!user && role === 'patient',
+  });
 
   const { data: appointments = [], isLoading } = useQuery({
     queryKey: ['video-appointments', role],
@@ -18,6 +29,16 @@ export function VideoSessionsPage({ role }: { role: 'admin' | 'doctor' | 'patien
   });
 
   const videoAppts = appointments.filter(a => a.type === 'video');
+
+  const pastFilters = role === 'doctor' ? { doctorId: doctor?.id, status: 'completed' }
+    : role === 'patient' ? { patientId: patient?.id, status: 'completed' }
+    : { status: 'completed' };
+
+  const { data: pastSessions = [], isLoading: pastLoading } = useQuery({
+    queryKey: ['video-sessions-past', role, doctor?.id, patient?.id],
+    queryFn: () => videoSessionsApi.getAll(pastFilters),
+    enabled: role === 'admin' || (role === 'doctor' && !!doctor) || (role === 'patient' && !!patient),
+  });
 
   if (isLoading) return <div className="space-y-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-32" />)}</div>;
 
@@ -29,7 +50,7 @@ export function VideoSessionsPage({ role }: { role: 'admin' | 'doctor' | 'patien
       </div>
 
       {videoAppts.length === 0 ? (
-        <EmptyState icon={<Video className="w-8 h-8" />} title="No video consultations" description="Confirmed video appointments will appear here" />
+        <EmptyState icon={<Video className="w-8 h-8" />} title="No upcoming video consultations" description="Confirmed video appointments will appear here" />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {videoAppts.map(appt => (
@@ -52,6 +73,70 @@ export function VideoSessionsPage({ role }: { role: 'admin' | 'doctor' | 'patien
           ))}
         </div>
       )}
+
+      <Card>
+        <CardHeader title="Past Consultations" subtitle="Completed video visits" icon={<History className="w-5 h-5" />} />
+        {pastLoading ? (
+          <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16" />)}</div>
+        ) : pastSessions.length === 0 ? (
+          <EmptyState icon={<History className="w-8 h-8" />} title="No past video consultations yet" description="Completed video visits will show up here" />
+        ) : (
+          <div className="space-y-2">
+            {pastSessions.map(s => (
+              <div key={s.id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors" onClick={() => setSelectedPast(s)}>
+                <Avatar name={role === 'doctor' ? s.patient?.profile?.full_name || 'P' : s.doctor?.profile?.full_name || 'D'} size="sm" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {role === 'doctor' ? s.patient?.profile?.full_name : `Dr. ${s.doctor?.profile?.full_name}`}
+                    {role === 'admin' && ` → Dr. ${s.doctor?.profile?.full_name}`}
+                  </p>
+                  <p className="text-xs text-slate-500 flex items-center gap-1"><Clock className="w-3 h-3" /> {formatDate(s.scheduled_at, 'long')} · {s.duration_seconds ? `${Math.round(s.duration_seconds / 60)} min` : 'N/A'}</p>
+                </div>
+                <Badge variant="success">completed</Badge>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Modal open={!!selectedPast} onClose={() => setSelectedPast(null)} title="Consultation Summary" size="lg">
+        {selectedPast && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-500">Patient</p>
+                <p className="font-medium">{selectedPast.patient?.profile?.full_name}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-slate-500">Doctor</p>
+                <p className="font-medium">Dr. {selectedPast.doctor?.profile?.full_name}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div><p className="text-slate-500">Date</p><p className="font-medium">{formatDate(selectedPast.scheduled_at, 'long')}</p></div>
+              <div><p className="text-slate-500">Duration</p><p className="font-medium">{selectedPast.duration_seconds ? `${Math.round(selectedPast.duration_seconds / 60)} minutes` : 'N/A'}</p></div>
+            </div>
+            {selectedPast.ai_summary && (
+              <div className="p-4 bg-primary-50 dark:bg-primary-900/20 rounded-xl">
+                <div className="flex items-center gap-2 mb-2"><Sparkles className="w-4 h-4 text-primary-600" /><p className="font-medium text-sm">AI Summary</p></div>
+                <p className="text-sm text-slate-700 dark:text-slate-300">{selectedPast.ai_summary}</p>
+              </div>
+            )}
+            {selectedPast.chat_messages?.length > 0 && (
+              <div>
+                <p className="text-sm font-medium mb-2">In-call Chat</p>
+                <div className="space-y-2">
+                  {selectedPast.chat_messages.map((m: any, i: number) => (
+                    <div key={i} className={cn('text-sm p-2 rounded-lg max-w-[85%]', m.sender === 'doctor' ? 'bg-slate-100 dark:bg-slate-800' : 'bg-primary-50 dark:bg-primary-900/20 ml-auto')}>
+                      <span className="font-medium capitalize">{m.sender}: </span>{m.message}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

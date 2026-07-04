@@ -11,7 +11,7 @@ import {
 import { doctorsApi, departmentsApi, appointmentsApi, patientsApi, healthProblemsApi, slotsApi } from '../../lib/api';
 import { useAuthStore } from '../../store/auth';
 import { Card, CardHeader, Button, Skeleton, Avatar, Badge } from '../../components/ui';
-import { cn, formatDate } from '../../lib/utils';
+import { cn, formatDate, formatCurrency } from '../../lib/utils';
 import type { HealthProblem } from '../../types';
 
 type Step = 'problem' | 'department' | 'doctor' | 'datetime' | 'review' | 'payment' | 'confirmation';
@@ -351,7 +351,7 @@ export function BookAppointment() {
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="text-lg font-bold text-primary-600 dark:text-primary-400">${doc.consultation_fee}</p>
+                      <p className="text-lg font-bold text-primary-600 dark:text-primary-400">{formatCurrency(doc.consultation_fee)}</p>
                       <p className="text-xs text-slate-400">consultation</p>
                     </div>
                     {isSelected && <CheckCircle className="w-5 h-5 text-primary-500 flex-shrink-0" />}
@@ -527,7 +527,7 @@ export function BookAppointment() {
                 <ReviewItem icon={<Calendar className="w-4 h-4" />} label="Date" value={formatDate(appointmentDate, 'long')} />
                 <ReviewItem icon={<Clock className="w-4 h-4" />} label="Time" value={appointmentTime} />
                 <ReviewItem icon={type === 'video' ? <Video className="w-4 h-4" /> : <MapPin className="w-4 h-4" />} label="Type" value={type === 'video' ? 'Video Call' : 'In Person'} />
-                <ReviewItem icon={<CreditCard className="w-4 h-4" />} label="Fee" value={`$${selectedDoctorObj?.consultation_fee}`} />
+                <ReviewItem icon={<CreditCard className="w-4 h-4" />} label="Fee" value={formatCurrency(selectedDoctorObj?.consultation_fee || 0)} />
               </div>
 
               {reason && (
@@ -559,7 +559,7 @@ export function BookAppointment() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-primary-600 dark:text-primary-400">Consultation Fee</p>
-                  <p className="text-2xl font-bold text-primary-700 dark:text-primary-300">${selectedDoctorObj?.consultation_fee}</p>
+                  <p className="text-2xl font-bold text-primary-700 dark:text-primary-300">{formatCurrency(selectedDoctorObj?.consultation_fee || 0)}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-primary-500 text-white">
                   <CreditCard className="w-6 h-6" />
@@ -610,7 +610,7 @@ export function BookAppointment() {
                 className="flex-1"
                 icon={!paymentProcessing ? <Lock className="w-4 h-4" /> : undefined}
               >
-                {paymentProcessing ? 'Processing Payment...' : `Pay $${selectedDoctorObj?.consultation_fee} & Confirm`}
+                {paymentProcessing ? 'Processing Payment...' : `Pay ${formatCurrency(selectedDoctorObj?.consultation_fee || 0)} & Confirm`}
               </Button>
               <Button variant="ghost" onClick={() => setStep('review')} disabled={paymentProcessing} icon={<ArrowLeft className="w-4 h-4" />}>
                 Back

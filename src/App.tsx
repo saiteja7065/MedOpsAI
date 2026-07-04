@@ -22,6 +22,7 @@ import { DepartmentsManagement } from './pages/admin/DepartmentsManagement';
 import { AnalyticsPage } from './pages/admin/AnalyticsPage';
 import { AdminCopilot } from './pages/admin/AdminCopilot';
 import { ClaimsManagement } from './pages/admin/ClaimsManagement';
+import { StaffScheduling } from './pages/admin/StaffScheduling';
 import { AdminSettings } from './pages/admin/AdminSettings';
 
 // Shared Pages
@@ -132,6 +133,7 @@ function App() {
           <Route path="appointments" element={<AppointmentsPage role="admin" />} />
           <Route path="beds" element={<BedManagement />} />
           <Route path="operation-theatres" element={<OTManagement />} />
+          <Route path="staff-scheduling" element={<StaffScheduling />} />
           <Route path="doctors" element={<DoctorsManagement />} />
           <Route path="patients" element={<PatientsManagement />} />
           <Route path="departments" element={<DepartmentsManagement />} />

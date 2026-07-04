@@ -1,3 +1,5 @@
+import type { Patient, Doctor } from './people';
+
 export type NotificationType = 'appointment' | 'video_call' | 'prescription' | 'emergency' | 'system' | 'reminder';
 export type VideoSessionStatus = 'scheduled' | 'waiting' | 'active' | 'completed' | 'cancelled';
 
@@ -23,6 +25,8 @@ export interface VideoSession {
   ai_summary?: string;
   chat_messages: ChatMessage[];
   created_at: string;
+  patient?: Patient;
+  doctor?: Doctor;
 }
 
 export interface Notification {

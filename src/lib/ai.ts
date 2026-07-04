@@ -1,4 +1,5 @@
 import type { AIMessage } from '../types';
+import { formatCurrency } from './utils';
 
 // Rule-based AI Health Assistant - no external API needed
 // Provides symptom analysis, triage recommendations, and basic medical Q&A
@@ -126,7 +127,7 @@ export function performTriage(input: TriageInput): TriageResult {
 
 const KNOWLEDGE_BASE: { keywords: string[]; response: string }[] = [
   {
-    keywords: ['fever', 'temperature', 'hot'],
+    keywords: ['fever', 'high temperature', 'running a temperature'],
     response: 'A fever is your body\'s natural response to infection. For adults:\n• Rest and drink plenty of fluids\n• A fever below 103°F (39.4°C) usually doesn\'t need treatment\n• Use a damp cloth on your forehead\n• If fever exceeds 103°F or lasts more than 3 days, consult a doctor\n• For infants under 3 months with any fever, seek immediate care.',
   },
   {
@@ -134,31 +135,31 @@ const KNOWLEDGE_BASE: { keywords: string[]; response: string }[] = [
     response: 'Headaches can have many causes. Common relief methods:\n• Rest in a quiet, dark room\n• Stay hydrated\n• Apply a cold compress\n• Try over-the-counter pain relievers as directed\n\nSeek immediate care if you experience: sudden severe headache, headache with fever/stiff neck, headache after head injury, or headache with vision changes/weakness.',
   },
   {
-    keywords: ['cold', 'cough', 'sore throat', 'flu'],
+    keywords: ['common cold', 'cough', 'sore throat', 'flu', 'runny nose'],
     response: 'For common cold and flu symptoms:\n• Rest and stay hydrated\n• Gargle with warm salt water for sore throat\n• Use a humidifier\n• Honey can help soothe cough (not for infants under 1)\n• Symptoms usually resolve in 7-10 days\n\nSee a doctor if: symptoms last over 10 days, severe headache, difficulty breathing, or high fever persists.',
   },
   {
-    keywords: ['stomach', 'nausea', 'vomiting', 'diarrhea', 'abdomen'],
+    keywords: ['stomach pain', 'stomach ache', 'nausea', 'vomiting', 'diarrhea', 'abdomen'],
     response: 'For digestive issues:\n• Drink clear fluids and electrolyte solutions\n• Eat bland foods (rice, toast, bananas)\n• Avoid dairy, caffeine, and fatty foods\n• Rest your digestive system\n\nSeek immediate care if: severe abdominal pain, blood in vomit/stool, signs of dehydration, or persistent vomiting for over 24 hours.',
   },
   {
-    keywords: ['chest pain', 'heart', 'breathing'],
+    keywords: ['chest pain', 'chest tightness', 'heart attack'],
     response: '⚠️ Chest pain can be serious. If you experience chest pain with:\n• Shortness of breath\n• Pain spreading to arm/jaw/back\n• Sweating, dizziness, or nausea\n\nCALL EMERGENCY SERVICES IMMEDIATELY. This could be a heart attack. Do not drive yourself. Chew an aspirin if available and not allergic.',
   },
   {
-    keywords: ['back pain', 'spine', 'muscle'],
+    keywords: ['back pain', 'backache', 'spine', 'lower back'],
     response: 'For back pain:\n• Apply heat or cold packs\n• Gentle stretching and movement\n• Maintain good posture\n• Over-the-counter pain relievers can help\n\nSee a doctor if: pain lasts over 2 weeks, numbness/tingling in legs, loss of bladder/bowel control, or pain after a fall/injury.',
   },
   {
-    keywords: ['skin', 'rash', 'itch', 'acne'],
+    keywords: ['skin rash', 'rash', 'itchy skin', 'acne'],
     response: 'For skin issues:\n• Keep the area clean and dry\n• Avoid scratching\n• Use mild, fragrance-free products\n• Apply cool compresses for itching\n\nSee a dermatologist if: rash spreads quickly, signs of infection (pus, warmth), severe itching, or no improvement with self-care.',
   },
   {
-    keywords: ['sleep', 'insomnia', 'tired'],
+    keywords: ['insomnia', "can't sleep", 'trouble sleeping'],
     response: 'For better sleep:\n• Maintain a consistent sleep schedule\n• Avoid screens 1 hour before bed\n• Keep your room cool and dark\n• Limit caffeine after noon\n• Regular exercise (not close to bedtime)\n\nConsult a doctor if insomnia persists for over a month or affects daily functioning.',
   },
   {
-    keywords: ['anxiety', 'stress', 'depression', 'mental'],
+    keywords: ['anxiety', 'anxious', 'depression', 'feeling stressed', 'panic attack'],
     response: 'Mental health is as important as physical health:\n• Practice deep breathing and mindfulness\n• Regular exercise helps reduce stress\n• Connect with friends and family\n• Consider talking to a counselor\n\nIf you have thoughts of self-harm, please reach out to a crisis helpline immediately. You are not alone, and help is available.',
   },
   {
@@ -170,7 +171,7 @@ const KNOWLEDGE_BASE: { keywords: string[]; response: string }[] = [
     response: 'Diabetes management:\n• Monitor blood sugar regularly\n• Balanced diet with controlled carbs\n• Regular exercise\n• Take medications as prescribed\n• Regular check-ups (eyes, feet, kidneys)\n\nSee a doctor if: blood sugar is consistently high/low, or you experience excessive thirst, frequent urination, or unexplained weight loss.',
   },
   {
-    keywords: ['pregnancy', 'pregnant', 'baby'],
+    keywords: ['pregnancy', 'pregnant', 'prenatal'],
     response: 'During pregnancy:\n• Attend all prenatal check-ups\n• Take prenatal vitamins\n• Eat a balanced diet\n• Avoid alcohol, smoking, and raw foods\n• Stay active with doctor-approved exercise\n\nContact your doctor immediately for: severe abdominal pain, bleeding, severe headache, vision changes, or decreased fetal movement.',
   },
 ];
@@ -229,11 +230,12 @@ export function getAdminCopilotResponse(query: string, stats: any): string {
   }
 
   if (lower.includes('bed') && lower.includes('available')) {
-    return `Currently ${stats.bedsAvailable} beds are available out of ${stats.totalBeds} total beds. ${stats.bedsOccupied} beds are occupied, giving an occupancy rate of ${Math.round((stats.bedsOccupied / stats.totalBeds) * 100)}%.`;
+    const rate = stats.totalBeds > 0 ? Math.round((stats.bedsOccupied / stats.totalBeds) * 100) : 0;
+    return `Currently ${stats.bedsAvailable} beds are available out of ${stats.totalBeds} total beds. ${stats.bedsOccupied} beds are occupied, giving an occupancy rate of ${rate}%.`;
   }
 
   if (lower.includes('bed') || lower.includes('occupancy')) {
-    const rate = Math.round((stats.bedsOccupied / stats.totalBeds) * 100);
+    const rate = stats.totalBeds > 0 ? Math.round((stats.bedsOccupied / stats.totalBeds) * 100) : 0;
     return `Hospital bed occupancy is at ${rate}%. ${stats.bedsOccupied} beds occupied, ${stats.bedsAvailable} available out of ${stats.totalBeds} total.`;
   }
 
@@ -246,7 +248,7 @@ export function getAdminCopilotResponse(query: string, stats: any): string {
   }
 
   if (lower.includes('revenue')) {
-    return `Total revenue from completed appointments is $${stats.revenue.toLocaleString()}. This includes ${stats.completedAppointments} completed consultations.`;
+    return `Total revenue from completed appointments is ${formatCurrency(stats.revenue)}. This includes ${stats.completedAppointments} completed consultations.`;
   }
 
   if (lower.includes('patient') && (lower.includes('total') || lower.includes('how many'))) {
@@ -258,11 +260,14 @@ export function getAdminCopilotResponse(query: string, stats: any): string {
   }
 
   if (lower.includes('report') || lower.includes('weekly') || lower.includes('summary')) {
-    return `Hospital Summary Report:\n\n• Total Patients: ${stats.totalPatients}\n• Total Doctors: ${stats.totalDoctors}\n• Total Appointments: ${stats.totalAppointments}\n• Completed: ${stats.completedAppointments}\n• Emergency Cases: ${stats.emergencyCases}\n• Bed Occupancy: ${Math.round((stats.bedsOccupied / stats.totalBeds) * 100)}%\n• OT Utilization: ${Math.round((stats.otsOccupied / stats.totalOTs) * 100)}%\n• Revenue: $${stats.revenue.toLocaleString()}\n• Video Consultations: ${stats.videoConsultations}`;
+    const bedOccupancyPct = stats.totalBeds > 0 ? Math.round((stats.bedsOccupied / stats.totalBeds) * 100) : 0;
+    const otUtilizationPct = stats.totalOTs > 0 ? Math.round((stats.otsOccupied / stats.totalOTs) * 100) : 0;
+    return `Hospital Summary Report:\n\n• Total Patients: ${stats.totalPatients}\n• Total Doctors: ${stats.totalDoctors}\n• Total Appointments: ${stats.totalAppointments}\n• Completed: ${stats.completedAppointments}\n• Emergency Cases: ${stats.emergencyCases}\n• Bed Occupancy: ${bedOccupancyPct}%\n• OT Utilization: ${otUtilizationPct}%\n• Revenue: ${formatCurrency(stats.revenue)}\n• Video Consultations: ${stats.videoConsultations}`;
   }
 
-  if (lower.includes('ot') || lower.includes('operation') || lower.includes('theatre')) {
-    return `Operation Theatre status: ${stats.otsAvailable} available, ${stats.otsOccupied} occupied out of ${stats.totalOTs} total OTs. Utilization rate is ${Math.round((stats.otsOccupied / stats.totalOTs) * 100)}%.`;
+  if (/\bots?\b/.test(lower) || lower.includes('operation') || lower.includes('theatre')) {
+    const otUtilizationPct = stats.totalOTs > 0 ? Math.round((stats.otsOccupied / stats.totalOTs) * 100) : 0;
+    return `Operation Theatre status: ${stats.otsAvailable} available, ${stats.otsOccupied} occupied out of ${stats.totalOTs} total OTs. Utilization rate is ${otUtilizationPct}%.`;
   }
 
   if (lower.includes('help') || lower.includes('what can you')) {
