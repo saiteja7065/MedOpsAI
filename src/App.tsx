@@ -21,6 +21,8 @@ import { PatientsManagement } from './pages/admin/PatientsManagement';
 import { DepartmentsManagement } from './pages/admin/DepartmentsManagement';
 import { AnalyticsPage } from './pages/admin/AnalyticsPage';
 import { AdminCopilot } from './pages/admin/AdminCopilot';
+import { ClaimsManagement } from './pages/admin/ClaimsManagement';
+import { AdminSettings } from './pages/admin/AdminSettings';
 
 // Shared Pages
 import { AppointmentsPage } from './pages/shared/AppointmentsPage';
@@ -37,6 +39,8 @@ import { AIHealthAssistant } from './pages/patient/AIHealthAssistant';
 import { DoctorDashboard } from './pages/doctor/DoctorDashboard';
 import { DoctorPatients } from './pages/doctor/DoctorPatients';
 import { DoctorReports } from './pages/doctor/DoctorReports';
+import { ClinicalCoding } from './pages/doctor/ClinicalCoding';
+import { DoctorSchedule } from './pages/doctor/DoctorSchedule';
 
 // Components
 import { CommandPalette } from './components/CommandPalette';
@@ -132,6 +136,7 @@ function App() {
           <Route path="patients" element={<PatientsManagement />} />
           <Route path="departments" element={<DepartmentsManagement />} />
           <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="claims" element={<ClaimsManagement />} />
           <Route path="copilot" element={<AdminCopilot />} />
           <Route path="video-sessions" element={<VideoSessionsPage role="admin" />} />
           <Route path="settings" element={<AdminSettings />} />
@@ -144,6 +149,7 @@ function App() {
           <Route path="patients" element={<DoctorPatients />} />
           <Route path="video-sessions" element={<VideoSessionsPage role="doctor" />} />
           <Route path="reports" element={<DoctorReports />} />
+          <Route path="coding" element={<ClinicalCoding />} />
           <Route path="schedule" element={<DoctorSchedule />} />
         </Route>
 
@@ -179,34 +185,9 @@ function App() {
   );
 }
 
-// Placeholder pages for routes not yet built
 function VideoCallRouteWrapper({ role }: { role: 'doctor' | 'patient' }) {
   const { id } = useParams();
   return <VideoCallRoom role={role} appointmentId={id || ''} />;
-}
-
-function AdminSettings() {
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Settings</h1>
-      <p className="text-slate-500">Hospital configuration settings</p>
-      <div className="card p-6">
-        <p className="text-slate-500">Settings panel - configure hospital timings, notifications, and system preferences.</p>
-      </div>
-    </div>
-  );
-}
-
-function DoctorSchedule() {
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">My Schedule</h1>
-      <p className="text-slate-500">Manage your availability and time slots</p>
-      <div className="card p-6">
-        <p className="text-slate-500">Schedule management - set your available days and time slots.</p>
-      </div>
-    </div>
-  );
 }
 
 export default App;

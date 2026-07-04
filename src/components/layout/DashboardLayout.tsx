@@ -4,7 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Activity, LayoutDashboard, Calendar, BedDouble, Stethoscope, Video,
   FileText, Users, Settings, Bell, Search, Menu, X, Moon, Sun,
-  LogOut, ChevronDown, Bot, Building2, BarChart3, MessageCircle, FlaskConical
+  LogOut, ChevronDown, Bot, Building2, BarChart3, MessageCircle, FlaskConical,
+  Receipt, ClipboardList, HeartPulse
 } from 'lucide-react';
 import { useAuthStore } from '../../store/auth';
 import { useUIStore } from '../../store/ui';
@@ -28,6 +29,7 @@ const navByRole: Record<string, NavItem[]> = {
     { to: '/admin/patients', label: 'Patients', icon: HeartPulse },
     { to: '/admin/departments', label: 'Departments', icon: Building2 },
     { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+    { to: '/admin/claims', label: 'Claims', icon: Receipt },
     { to: '/admin/video-sessions', label: 'Video Sessions', icon: Video },
     { to: '/admin/settings', label: 'Settings', icon: Settings },
   ],
@@ -37,6 +39,7 @@ const navByRole: Record<string, NavItem[]> = {
     { to: '/doctor/patients', label: 'My Patients', icon: Users },
     { to: '/doctor/video-sessions', label: 'Video Calls', icon: Video },
     { to: '/doctor/reports', label: 'Reports', icon: FileText },
+    { to: '/doctor/coding', label: 'Medical Coding', icon: ClipboardList },
     { to: '/doctor/schedule', label: 'Schedule', icon: Calendar },
   ],
   patient: [
@@ -49,8 +52,6 @@ const navByRole: Record<string, NavItem[]> = {
     { to: '/patient/ai-assistant', label: 'AI Health Assistant', icon: Bot },
   ],
 };
-
-import { HeartPulse } from 'lucide-react';
 
 export function DashboardLayout() {
   const navigate = useNavigate();

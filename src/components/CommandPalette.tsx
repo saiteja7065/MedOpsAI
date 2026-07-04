@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ArrowRight, Calendar, BedDouble, Users, FileText, Video, Bot, BarChart3, Building2 } from 'lucide-react';
+import { Search, ArrowRight, Calendar, BedDouble, Users, FileText, Video, Bot, BarChart3, Building2, Receipt, ClipboardList } from 'lucide-react';
 import { useUIStore } from '../store/ui';
 import { useAuthStore } from '../store/auth';
 import { cn } from '../lib/utils';
@@ -44,6 +44,8 @@ export function CommandPalette() {
     { label: 'AI Health Assistant', icon: Bot, action: () => { setCommandPalette(false); window.dispatchEvent(new CustomEvent('open-ai-assistant')); }, category: 'AI' },
     { label: 'Analytics', icon: BarChart3, action: () => navigate('/admin/analytics'), category: 'Admin' },
     { label: 'Departments', icon: Building2, action: () => navigate('/admin/departments'), category: 'Admin' },
+    { label: 'Claims', icon: Receipt, action: () => navigate('/admin/claims'), category: 'Admin' },
+    { label: 'Medical Coding', icon: ClipboardList, action: () => navigate('/doctor/coding'), category: 'Doctor' },
   ];
 
   const filtered = commands.filter(c =>

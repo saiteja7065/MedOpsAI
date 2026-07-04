@@ -44,6 +44,12 @@ A production-ready, AI-powered hospital administration operating system built wi
 - **AI Medical Report Analysis**: Simulated OCR extraction with disease/medicine highlighting and test result parsing
 - **Emergency Detection**: Automatic emergency alerts for critical symptoms
 
+### Medical Coding & Claims Automation (AI-assisted)
+- **Clinical note → AI coding**: doctors write a clinical note (Doctor → Medical Coding) and request ICD-10/CPT suggestions from a real LLM call (Groq), each with a confidence score and a rationale quoting the note — not mocked output
+- **Human-in-the-loop confirmation**: suggested codes are checked/unchecked and confirmed by the doctor before anything becomes billable, satisfying the "explainable, human-approved coding" requirement
+- **Claims workflow**: confirmed codes raise a draft claim; Admin → Claims runs deterministic payer-rule validation (required fields, code format, amount thresholds), computes an explainable denial-risk score, and only then allows Submit — every status change is written to an immutable audit log by a database trigger, not application code
+- **Simulated payer decision**: since there's no live payer integration, Admin can mark a submitted claim Approved/Denied to model the response and track denial reasons over time
+
 ### Video Consultation
 - WebRTC-based video calls with camera/mic controls
 - In-call chat messaging
@@ -82,7 +88,7 @@ A production-ready, AI-powered hospital administration operating system built wi
 
 ## Database Schema
 
-15 tables with full RLS policies:
+19 tables with full RLS policies. Core hospital schema (15 tables):
 - `profiles` - User profiles linked to auth.users
 - `departments` - Hospital departments
 - `doctors` - Doctor profiles with specialization
@@ -99,14 +105,33 @@ A production-ready, AI-powered hospital administration operating system built wi
 - `ai_conversations` - AI assistant history
 - `analytics_snapshots` - Pre-computed analytics
 
+Medical coding & claims (4 tables):
+- `payer_rules` - Deterministic validation rules claims are checked against (required fields, code format, amount thresholds)
+- `coding_suggestions` - AI-suggested ICD-10/CPT codes per clinical note, with confidence + rationale, and the doctor-confirmed final set
+- `claims` - Insurance claims built from confirmed codes, carrying validation results and a denial-risk score
+- `claim_audit_log` - Append-only log of every claim status change, written by a trigger (not application code) so it can't be bypassed
+
 ## Getting Started
 
-The dev server runs automatically. Open the browser and navigate to the app URL.
+1. **Create a Supabase project** at [supabase.com](https://supabase.com) and copy `.env.example` to `.env`, filling in `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from Project Settings → API.
+2. **Run the migrations** in `supabase/migrations/` against your project, in order — either via the Supabase SQL editor (paste each file) or with the [Supabase CLI](https://supabase.com/docs/guides/cli): `supabase db push`.
+3. **Set the Groq secret** the AI coding/claims edge functions depend on (get a free key at [console.groq.com/keys](https://console.groq.com/keys)):
+   ```bash
+   supabase secrets set GROQ_API_KEY=your-groq-key
+   ```
+4. **Deploy the edge functions**:
+   ```bash
+   supabase functions deploy medical-coding
+   supabase functions deploy validate-claim
+   supabase functions deploy seed-demo-users
+   ```
+5. **Install and run**:
+   ```bash
+   npm install
+   npm run dev
+   ```
 
-```bash
-npm install
-npm run build
-```
+Without steps 1-4 the app has no backend to talk to — `npm run build` will still succeed (it doesn't touch the network), but the running app needs a live Supabase project.
 
 ## Project Structure
 
@@ -122,9 +147,9 @@ src/
 │   ├── supabase.ts  # Supabase client
 │   └── utils.ts     # Utility functions
 ├── pages/
-│   ├── admin/       # Admin pages
+│   ├── admin/       # Admin pages (incl. ClaimsManagement.tsx)
 │   ├── auth/        # Authentication pages
-│   ├── doctor/      # Doctor pages
+│   ├── doctor/      # Doctor pages (incl. ClinicalCoding.tsx)
 │   ├── patient/     # Patient pages
 │   └── shared/      # Shared pages (appointments, video)
 ├── store/           # Zustand stores
