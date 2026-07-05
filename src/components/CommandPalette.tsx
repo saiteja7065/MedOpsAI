@@ -4,6 +4,7 @@ import { Search, ArrowRight, Calendar, BedDouble, Users, FileText, Video, Bot, B
 import { useUIStore } from '../store/ui';
 import { useAuthStore } from '../store/auth';
 import { cn } from '../lib/utils';
+import { COPILOT_ROUTES } from './ai/AIAssistant';
 
 interface Command {
   label: string;
@@ -41,7 +42,7 @@ export function CommandPalette() {
     { label: 'Manage Patients', icon: Users, action: () => navigate('/admin/patients'), category: 'Admin' },
     { label: 'Medical Reports', icon: FileText, action: () => navigate(`${base}/reports`), category: 'Records' },
     { label: 'Video Consultation', icon: Video, action: () => navigate(`${base}/video-sessions`), category: 'Communication' },
-    { label: 'AI Health Assistant', icon: Bot, action: () => { setCommandPalette(false); window.dispatchEvent(new CustomEvent('open-ai-assistant')); }, category: 'AI' },
+    { label: 'AI Copilot', icon: Bot, action: () => navigate(COPILOT_ROUTES[user.role] || base), category: 'AI' },
     { label: 'Analytics', icon: BarChart3, action: () => navigate('/admin/analytics'), category: 'Admin' },
     { label: 'Departments', icon: Building2, action: () => navigate('/admin/departments'), category: 'Admin' },
     { label: 'Claims', icon: Receipt, action: () => navigate('/admin/claims'), category: 'Admin' },

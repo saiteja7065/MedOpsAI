@@ -14,7 +14,7 @@ const WEEKS_AHEAD = 4;
 
 export function AnalyticsPage() {
   const { data: stats, isLoading } = useQuery({ queryKey: ['admin-stats'], queryFn: analyticsApi.getDashboardStats });
-  const { data: appointments = [] } = useQuery({ queryKey: ['appointments-all'], queryFn: () => appointmentsApi.getAll() });
+  const { data: appointments = [] } = useQuery({ queryKey: ['appointments-all'], queryFn: () => appointmentsApi.getAll({ includeHistorical: true }) });
   const { data: beds = [] } = useQuery({ queryKey: ['beds'], queryFn: bedsApi.getAll });
   const { data: ots = [] } = useQuery({ queryKey: ['ots'], queryFn: otsApi.getAll });
   const { data: doctors = [] } = useQuery({ queryKey: ['doctors'], queryFn: () => doctorsApi.getAll() });

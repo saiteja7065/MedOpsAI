@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useAuthStore } from './store/auth';
-import { useUIStore } from './store/ui';
 import { supabase } from './lib/supabase';
+
+// Public Pages
+import { LandingPage } from './pages/LandingPage';
 
 // Auth Pages
 import { LoginPage } from './pages/auth/LoginPage';
@@ -34,7 +36,7 @@ import { PatientDashboard } from './pages/patient/PatientDashboard';
 import { BookAppointment } from './pages/patient/BookAppointment';
 import { MedicalReports } from './pages/patient/MedicalReports';
 import { Prescriptions } from './pages/patient/Prescriptions';
-import { AIHealthAssistant } from './pages/patient/AIHealthAssistant';
+import { PatientCopilot } from './pages/patient/PatientCopilot';
 
 // Doctor Pages
 import { DoctorDashboard } from './pages/doctor/DoctorDashboard';
@@ -42,10 +44,11 @@ import { DoctorPatients } from './pages/doctor/DoctorPatients';
 import { DoctorReports } from './pages/doctor/DoctorReports';
 import { ClinicalCoding } from './pages/doctor/ClinicalCoding';
 import { DoctorSchedule } from './pages/doctor/DoctorSchedule';
+import { DoctorCopilot } from './pages/doctor/DoctorCopilot';
 
 // Components
 import { CommandPalette } from './components/CommandPalette';
-import { AIAssistant, AIAssistantFAB } from './components/ai/AIAssistant';
+import { AIAssistantFAB } from './components/ai/AIAssistant';
 
 function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles: string[] }) {
   const { user, loading, session, fetchProfile } = useAuthStore();
@@ -81,7 +84,6 @@ function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles:
 
 function App() {
   const { user, setUser, setSession, setLoading, fetchProfile } = useAuthStore();
-  const { setAIAssistant } = useUIStore();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -108,14 +110,9 @@ function App() {
       })();
     });
 
-    // Listen for AI assistant open event from command palette
-    const handler = () => setAIAssistant(true);
-    window.addEventListener('open-ai-assistant', handler);
-
     return () => {
       mounted = false;
       subscription.unsubscribe();
-      window.removeEventListener('open-ai-assistant', handler);
     };
   }, []);
 
@@ -153,6 +150,7 @@ function App() {
           <Route path="reports" element={<DoctorReports />} />
           <Route path="coding" element={<ClinicalCoding />} />
           <Route path="schedule" element={<DoctorSchedule />} />
+          <Route path="copilot" element={<DoctorCopilot />} />
         </Route>
 
         {/* Patient Routes */}
@@ -163,15 +161,15 @@ function App() {
           <Route path="video-sessions" element={<VideoSessionsPage role="patient" />} />
           <Route path="reports" element={<MedicalReports />} />
           <Route path="prescriptions" element={<Prescriptions />} />
-          <Route path="ai-assistant" element={<AIHealthAssistant />} />
+          <Route path="copilot" element={<PatientCopilot />} />
         </Route>
 
         {/* Video Call Routes */}
         <Route path="/doctor/video-call/:id" element={<ProtectedRoute roles={['doctor']}><VideoCallRouteWrapper role="doctor" /></ProtectedRoute>} />
         <Route path="/patient/video-call/:id" element={<ProtectedRoute roles={['patient']}><VideoCallRouteWrapper role="patient" /></ProtectedRoute>} />
 
-        {/* Default redirect */}
-        <Route path="/" element={<Navigate to={user ? `/${user.role}` : '/login'} />} />
+        {/* Landing page for logged-out visitors; logged-in users skip straight to their dashboard */}
+        <Route path="/" element={user ? <Navigate to={`/${user.role}`} /> : <LandingPage />} />
         <Route path="*" element={<Navigate to={user ? `/${user.role}` : '/login'} />} />
       </Routes>
 
@@ -179,8 +177,7 @@ function App() {
       {user && (
         <>
           <CommandPalette />
-          {user.role !== 'doctor' && <AIAssistant />}
-          {user.role !== 'doctor' && <AIAssistantFAB />}
+          <AIAssistantFAB />
         </>
       )}
     </>

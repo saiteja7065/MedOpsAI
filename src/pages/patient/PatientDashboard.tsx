@@ -104,7 +104,7 @@ export function PatientDashboard() {
             {[
               { label: 'Book Appointment', icon: Calendar, route: '/patient/book', color: 'from-primary-500 to-cyan-500' },
               { label: 'Video Consultation', icon: Video, route: '/patient/video-sessions', color: 'from-cyan-500 to-teal-500' },
-              { label: 'AI Health Assistant', icon: Bot, route: '/patient/ai-assistant', color: 'from-emerald-500 to-green-500' },
+              { label: 'AI Copilot', icon: Bot, route: '/patient/copilot', color: 'from-emerald-500 to-green-500' },
               { label: 'Upload Report', icon: FileText, route: '/patient/reports', color: 'from-amber-500 to-orange-500' },
             ].map(action => (
               <button

@@ -32,6 +32,7 @@ const navByRole: Record<string, NavItem[]> = {
     { to: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
     { to: '/admin/claims', label: 'Claims', icon: Receipt },
     { to: '/admin/video-sessions', label: 'Video Sessions', icon: Video },
+    { to: '/admin/copilot', label: 'AI Copilot', icon: Bot },
     { to: '/admin/settings', label: 'Settings', icon: Settings },
   ],
   doctor: [
@@ -42,6 +43,7 @@ const navByRole: Record<string, NavItem[]> = {
     { to: '/doctor/reports', label: 'Reports', icon: FileText },
     { to: '/doctor/coding', label: 'Medical Coding', icon: ClipboardList },
     { to: '/doctor/schedule', label: 'Schedule', icon: Calendar },
+    { to: '/doctor/copilot', label: 'AI Copilot', icon: Bot },
   ],
   patient: [
     { to: '/patient', label: 'Dashboard', icon: LayoutDashboard },
@@ -50,14 +52,14 @@ const navByRole: Record<string, NavItem[]> = {
     { to: '/patient/video', label: 'Video Consultation', icon: Video },
     { to: '/patient/reports', label: 'Medical Reports', icon: FileText },
     { to: '/patient/prescriptions', label: 'Prescriptions', icon: FlaskConical },
-    { to: '/patient/ai-assistant', label: 'AI Health Assistant', icon: Bot },
+    { to: '/patient/copilot', label: 'AI Copilot', icon: Bot },
   ],
 };
 
 export function DashboardLayout() {
   const navigate = useNavigate();
   const { user, signOut } = useAuthStore();
-  const { darkMode, toggleDarkMode, sidebarCollapsed, toggleSidebar, setCommandPalette, setAIAssistant } = useUIStore();
+  const { darkMode, toggleDarkMode, sidebarCollapsed, toggleSidebar, setCommandPalette } = useUIStore();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -110,7 +112,7 @@ export function DashboardLayout() {
             </div>
             {!sidebarCollapsed && (
               <div>
-                <h1 className="font-bold text-slate-900 dark:text-white">MediCore</h1>
+                <h1 className="font-bold text-slate-900 dark:text-white">MedOps AI</h1>
                 <p className="text-xs text-slate-500 capitalize">{user.role} Portal</p>
               </div>
             )}
@@ -132,17 +134,6 @@ export function DashboardLayout() {
           ))}
         </nav>
 
-        {user.role !== 'doctor' && (
-          <div className="p-3 border-t border-slate-200 dark:border-slate-800">
-            <button
-              onClick={() => setAIAssistant(true)}
-              className={cn('nav-link text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20', sidebarCollapsed && 'justify-center')}
-            >
-              <Bot className="w-5 h-5 flex-shrink-0" />
-              {!sidebarCollapsed && <span>AI Assistant</span>}
-            </button>
-          </div>
-        )}
       </aside>
 
       {/* Main content */}

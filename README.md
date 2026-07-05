@@ -1,4 +1,4 @@
-# AI Hospital Administration OS
+# MedOps AI
 
 A production-ready, AI-powered hospital administration operating system built with React, TypeScript, and Supabase.
 
@@ -82,9 +82,11 @@ A production-ready, AI-powered hospital administration operating system built wi
 
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | admin@medicore.health | Admin@MediCore2026 |
-| Doctor | doctor@medicore.health | Doctor@MediCore2026 |
-| Patient | patient@medicore.health | Patient@MediCore2026 |
+| Admin | verify.admin@medops.test | Verify@Admin2026! |
+| Doctor | verify.doctor@medops.test | Verify@Doctor2026! |
+| Patient | verify.patient@medops.test | Verify@Patient2026! |
+
+14 additional doctor/patient accounts (2 doctors per department, 5 more patients) all share the password `Patient@Demo2026!` — see `supabase/seed/expand_staff_patients_seed.sql` for the full list of emails.
 
 ## Database Schema
 
@@ -124,6 +126,11 @@ Medical coding & claims (4 tables):
    supabase functions deploy medical-coding
    supabase functions deploy validate-claim
    supabase functions deploy seed-demo-users
+   supabase functions deploy analyze-report
+   supabase functions deploy narrate-forecast
+   supabase functions deploy admin-copilot
+   supabase functions deploy doctor-copilot
+   supabase functions deploy patient-copilot
    ```
 5. **Install and run**:
    ```bash

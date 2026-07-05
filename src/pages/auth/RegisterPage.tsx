@@ -71,7 +71,7 @@ export function RegisterPage() {
               <Activity className="w-7 h-7" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">MediCore OS</h1>
+              <h1 className="text-xl font-bold">MedOps AI</h1>
               <p className="text-sm text-white/70">Hospital Administration</p>
             </div>
           </div>
@@ -100,7 +100,7 @@ export function RegisterPage() {
             </div>
           </div>
 
-          <p className="text-white/60 text-sm">© 2026 MediCore OS. All rights reserved.</p>
+          <p className="text-white/60 text-sm">© 2026 MedOps AI. All rights reserved.</p>
         </div>
       </div>
 
@@ -111,13 +111,13 @@ export function RegisterPage() {
               <Activity className="w-7 h-7" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">MediCore OS</h1>
+              <h1 className="text-xl font-bold">MedOps AI</h1>
               <p className="text-sm text-slate-500">Hospital Administration</p>
             </div>
           </div>
 
           <h2 className="text-3xl font-bold mb-2">Create your account</h2>
-          <p className="text-slate-500 mb-8">Join MediCore OS today</p>
+          <p className="text-slate-500 mb-8">Join MedOps AI today</p>
 
           {error && (
             <div className="mb-6 p-4 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-xl text-rose-700 dark:text-rose-300 text-sm">

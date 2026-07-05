@@ -8,6 +8,7 @@ export const appointmentsApi = {
     status?: string;
     date?: string;
     search?: string;
+    includeHistorical?: boolean;
   }) {
     let q = supabase.from('appointments').select(`
       *,
@@ -21,6 +22,11 @@ export const appointmentsApi = {
     if (filters?.doctor_id) q = q.eq('doctor_id', filters.doctor_id);
     if (filters?.status) q = q.eq('status', filters.status);
     if (filters?.date) q = q.eq('appointment_date', filters.date);
+    // APT-HIST-% rows are synthetic daily volume seeded only so the demand
+    // forecast has real weekly history to fit a trend to — they aren't real
+    // visits and shouldn't clutter appointment lists. The forecast query
+    // opts back in with includeHistorical: true.
+    if (!filters?.includeHistorical) q = q.not('appointment_number', 'like', 'APT-HIST-%');
 
     const { data, error } = await q;
     if (error) throw error;

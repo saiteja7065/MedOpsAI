@@ -33,7 +33,7 @@ export function ForgotPasswordPage() {
             <Activity className="w-7 h-7" />
           </div>
           <div>
-            <h1 className="text-xl font-bold">MediCore OS</h1>
+            <h1 className="text-xl font-bold">MedOps AI</h1>
             <p className="text-sm text-slate-500">Hospital Administration</p>
           </div>
         </div>

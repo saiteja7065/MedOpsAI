@@ -23,18 +23,18 @@ Deno.serve(async (req: Request) => {
 
     const demoUsers = [
       {
-        email: "admin@medicore.health",
-        password: "Admin@MediCore2026",
+        email: "admin@medopsai.health",
+        password: "Admin@MedOpsAI2026",
         userData: { full_name: "Admin User", role: "admin", phone: "+1234567890" },
       },
       {
-        email: "doctor@medicore.health",
-        password: "Doctor@MediCore2026",
+        email: "doctor@medopsai.health",
+        password: "Doctor@MedOpsAI2026",
         userData: { full_name: "Dr. Sarah Smith", role: "doctor", phone: "+1234567891" },
       },
       {
-        email: "patient@medicore.health",
-        password: "Patient@MediCore2026",
+        email: "patient@medopsai.health",
+        password: "Patient@MedOpsAI2026",
         userData: { full_name: "John Doe", role: "patient", phone: "+1234567892" },
       },
     ];
@@ -118,17 +118,17 @@ Deno.serve(async (req: Request) => {
     const { data: adminProfile } = await supabase
       .from("profiles")
       .select("id")
-      .eq("email", "admin@medicore.health")
+      .eq("email", "admin@medopsai.health")
       .maybeSingle();
     const { data: doctorProfile } = await supabase
       .from("profiles")
       .select("id")
-      .eq("email", "doctor@medicore.health")
+      .eq("email", "doctor@medopsai.health")
       .maybeSingle();
     const { data: patientProfile } = await supabase
       .from("profiles")
       .select("id")
-      .eq("email", "patient@medicore.health")
+      .eq("email", "patient@medopsai.health")
       .maybeSingle();
 
     if (doctorProfile && patientProfile) {
@@ -326,8 +326,8 @@ Deno.serve(async (req: Request) => {
         },
         {
           user_id: patientProfile.id,
-          title: "Welcome to MediCore",
-          message: "Welcome to MediCore OS! Your patient account has been created successfully.",
+          title: "Welcome to MedOps AI",
+          message: "Welcome to MedOps AI! Your patient account has been created successfully.",
           type: "system",
         },
       ], { onConflict: "user_id" });

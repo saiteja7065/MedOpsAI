@@ -18,3 +18,6 @@ export { codingApi } from './coding';
 export { claimsApi } from './claims';
 export { forecastApi } from './forecast';
 export { staffShiftsApi } from './staffShifts';
+export { adminCopilotApi } from './adminCopilot';
+export { doctorCopilotApi } from './doctorCopilot';
+export { patientCopilotApi } from './patientCopilot';

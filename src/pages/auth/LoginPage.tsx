@@ -21,8 +21,6 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [seeding, setSeeding] = useState(false);
-  const [seedResults, setSeedResults] = useState<any[] | null>(null);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -70,7 +68,7 @@ export function LoginPage() {
               <Activity className="w-7 h-7" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">MediCore OS</h1>
+              <h1 className="text-xl font-bold">MedOps AI</h1>
               <p className="text-sm text-white/70">Hospital Administration</p>
             </div>
           </div>
@@ -97,7 +95,7 @@ export function LoginPage() {
             </div>
           </div>
 
-          <p className="text-white/60 text-sm">© 2026 MediCore OS. All rights reserved.</p>
+          <p className="text-white/60 text-sm">© 2026 MedOps AI. All rights reserved.</p>
         </div>
       </div>
 
@@ -109,7 +107,7 @@ export function LoginPage() {
               <Activity className="w-7 h-7" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">MediCore OS</h1>
+              <h1 className="text-xl font-bold">MedOps AI</h1>
               <p className="text-sm text-slate-500">Hospital Administration</p>
             </div>
           </div>
@@ -177,37 +175,10 @@ export function LoginPage() {
           <div className="mt-8 p-4 bg-primary-50 dark:bg-primary-900/20 rounded-xl border border-primary-100 dark:border-primary-800">
             <p className="text-sm font-medium text-primary-700 dark:text-primary-300 mb-2">Demo Accounts:</p>
             <div className="space-y-1 text-xs text-primary-600 dark:text-primary-400">
-              <p>Admin: admin@medicore.health / Admin@MediCore2026</p>
-              <p>Doctor: doctor@medicore.health / Doctor@MediCore2026</p>
-              <p>Patient: patient@medicore.health / Patient@MediCore2026</p>
+              <p>Admin: verify.admin@medops.test / Verify@Admin2026!</p>
+              <p>Doctor: verify.doctor@medops.test / Verify@Doctor2026!</p>
+              <p>Patient: verify.patient@medops.test / Verify@Patient2026!</p>
             </div>
-            <button
-              type="button"
-              onClick={async () => {
-                setSeeding(true);
-                try {
-                  const { seedDemoUsers } = await import('../../lib/seed');
-                  const results = await seedDemoUsers();
-                  setSeedResults(results);
-                } catch (e: any) {
-                  setError(e.message);
-                } finally {
-                  setSeeding(false);
-                }
-              }}
-              className="mt-3 text-xs text-primary-600 hover:text-primary-700 font-medium underline"
-            >
-              {seeding ? 'Creating demo accounts...' : 'Click to create demo accounts (first time only)'}
-            </button>
-            {seedResults && (
-              <div className="mt-2 text-xs space-y-1">
-                {seedResults.map((r: any) => (
-                  <p key={r.email} className={r.status === 'error' ? 'text-rose-600' : 'text-emerald-600'}>
-                    {r.email}: {r.status} {r.error || ''}
-                  </p>
-                ))}
-              </div>
-            )}
           </div>
 
           <p className="text-center mt-6 text-sm text-slate-500">
